@@ -2,37 +2,37 @@ import socket
 import threading
 
 class NodoP2P:
-    def __init__(self, direccion_servidor):
+    def __init__(self, direccion_servidor, puerto_servidor):
         self.direccion_servidor = direccion_servidor
-        self.ip_host = None
-        self.ip_par = None
+        self.puerto_servidor = puerto_servidor
+        self.ip_anfitrion = None
+        self.ip_pareja = None
 
     # Conectarse al servidor y obtener la dirección IP asignada
     def login(self):
         socket_cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_cliente.connect(self.direccion_servidor)
-        self.ip_host = socket_cliente.recv(1024).decode()
-        socket_cliente.close()
-    
-    # Conectarse con el otro host y enviar/recibir direcciones IP
-    def intercambiar_ips(self):
-        socket_par = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_par.connect((self.ip_par, 12345))
-        socket_par.send(self.ip_host.encode())
-        self.ip_par = socket_par.recv(1024).decode()
-        socket_par.close()
-    
-    # Manejar la conexión con el otro host
-    def manejar_conexion(self, socket_cliente, direccion):
-        self.ip_par = socket_cliente.recv(1024).decode()
-        socket_cliente.send(self.ip_host.encode())
+        socket_cliente.connect((self.direccion_servidor, self.puerto_servidor))
+        self.ip_anfitrion = socket_cliente.recv(1024).decode()
         socket_cliente.close()
 
-    
+    # Conectarse con la otra máquina y enviar/recibir direcciones IP
+    def intercambiar_ips(self):
+        socket_pareja = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_pareja.connect((self.ip_pareja, self.puerto_servidor))
+        socket_pareja.send(self.ip_anfitrion.encode())
+        self.ip_pareja = socket_pareja.recv(1024).decode()
+        socket_pareja.close()
+
+    # Manejar la conexión con la otra máquina
+    def manejar_conexion(self, socket_cliente, direccion):
+        self.ip_pareja = socket_cliente.recv(1024).decode()
+        socket_cliente.send(self.ip_anfitrion.encode())
+        socket_cliente.close()
+
     # Iniciar un socket en espera de conexiones entrantes
     def iniciar_escucha(self):
         socket_servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_servidor.bind(('0.0.0.0', 12345))
+        socket_servidor.bind(('0.0.0.0', self.puerto_servidor))
         socket_servidor.listen(1)
 
         while True:
@@ -42,12 +42,12 @@ class NodoP2P:
     # Iniciar el proceso P2P
     def iniciar(self):
         self.login()
-        print(f'IP asignada: {self.ip_host}')
+        print(f'IP asignada: {self.ip_anfitrion}')
 
-        self.ip_par = input('Introduce la dirección IP del otro host: ')
+        self.ip_pareja = input('Ingrese la dirección IP de la otra máquina: ')
 
         self.intercambiar_ips()
-        print(f'Conectado con el otro host. Su IP es: {self.ip_par}')
+        print(f'Conectado con la otra máquina. Su IP es: {self.ip_pareja}')
 
         threading.Thread(target=self.iniciar_escucha).start()
 
@@ -55,15 +55,16 @@ class NodoP2P:
             mensaje = input('Mensaje a enviar: ')
             self.enviar_mensaje(mensaje)
 
-    # Enviar mensaje al otro host
+    # Enviar mensaje a la otra máquina
     def enviar_mensaje(self, mensaje):
-        socket_par = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_par.connect((self.ip_par, 12345))
-        socket_par.send(mensaje.encode())
-        socket_par.close()
+        socket_pareja = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_pareja.connect((self.ip_pareja, self.puerto_servidor))
+        socket_pareja.send(mensaje.encode())
+        socket_pareja.close()
 
 if __name__ == '__main__':
-    # Reemplaza con la dirección IP del servidor
-    direccion_servidor = ('DIRECCION_IP_SERVIDOR', 12345)
-    nodo = NodoP2P(direccion_servidor)
+    # Reemplazar dirección IP y número de puerto
+    direccion_servidor = 'DIRECCION_SERVIDOR' 
+    puerto_servidor = 12345
+    nodo = NodoP2P(direccion_servidor, puerto_servidor)
     nodo.iniciar()
