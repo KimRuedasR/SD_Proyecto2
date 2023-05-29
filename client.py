@@ -2,25 +2,35 @@ import socket
 import threading
 import os
 
+# Definición de la clase Cliente
 class Cliente:
-    def __init__(self, host = '127.0.0.1', port = 5000):
+    # El constructor de la clase Cliente
+    def __init__(self, host = '148.220.208.133', port = 5000):
         self.apodo = input("Ingresa tu apodo: ")
+        # Inicialización del socket
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Conexión al servidor
         self.cliente.connect((host, port))
 
+    # Método para recibir datos del servidor
     def recibir(self):
         while True:
             try:
+                # Recepción del mensaje del servidor
                 mensaje = self.cliente.recv(1024).decode('utf-8')
+                # Si el mensaje es 'NICK', enviar el apodo al servidor
                 if mensaje == 'NICK':
                     self.cliente.send(self.apodo.encode('utf-8'))
                 else:
+                    # Imprimir el mensaje
                     print(mensaje)
             except:
+                # Si hay un error, cerrar la conexión y salir del bucle
                 print("¡Ocurrió un error!")
                 self.cliente.close()
                 break
 
+    # Método para enviar datos al servidor
     def escribir(self):
         while True:
             print("\nElige una opción: ")
@@ -49,6 +59,7 @@ class Cliente:
             else:
                 print("\nOpción incorrecta. Intenta de nuevo.")
 
+    # Método para enviar un archivo al servidor
     def enviar_archivo(self, nombre_archivo, socket):
         with open(nombre_archivo, 'rb') as f:
             while True:
@@ -57,6 +68,7 @@ class Cliente:
                     break
                 socket.sendall(bytes_leidos)
 
+    # Método para recibir un archivo del servidor
     def recibir_archivo(self, nombre_archivo, socket):
         with open(nombre_archivo, 'wb') as f:
             while True:
@@ -65,6 +77,7 @@ class Cliente:
                     break
                 f.write(datos)
 
+    # Método para iniciar los threads de recibir y escribir
     def iniciar(self):
         hilo_recibir = threading.Thread(target=self.recibir)
         hilo_recibir.start()
@@ -72,5 +85,6 @@ class Cliente:
         hilo_escribir = threading.Thread(target=self.escribir)
         hilo_escribir.start()
 
+# Creación y inicio del cliente
 cliente = Cliente()
 cliente.iniciar()
