@@ -2,6 +2,8 @@ import socket
 import threading
 import os
 
+FILE_TRANSFER_START = 'FILE_TRANSFER_START'
+FILE_TRANSFER_END = 'FILE_TRANSFER_END'
 # Definición de la clase Cliente
 class Cliente:
     # El constructor de la clase Cliente

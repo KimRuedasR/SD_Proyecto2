@@ -1,6 +1,8 @@
 import socket
 import threading
 
+FILE_TRANSFER_START = 'FILE_TRANSFER_START'
+FILE_TRANSFER_END = 'FILE_TRANSFER_END'
 # Definición de la clase Servidor
 class Servidor:
     # El constructor de la clase Servidor
