@@ -4,9 +4,8 @@ import threading
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
-# Definición de la clase Servidor
 class Servidor:
-    # Constructor de la clase Servidor
+    # Constructor del servidor
     def __init__(self, host = '148.220.208.133', puerto = 5000):
         self.host = host
         self.puerto = puerto
@@ -15,41 +14,37 @@ class Servidor:
         self.servidor.bind((self.host, self.puerto))
         self.clientes = {}
 
-    # Método para enviar un mensaje a todos los clientes excepto a uno
+    # Método para enviar un mensaje a todos los clientes
     def difundir(self, mensaje, cliente):
         for c in self.clientes:
-            # No enviar el mensaje al cliente que originalmente lo envió
-            if c != cliente:
+            # No enviar el mensaje al cliente emisor
                 try:
                     c.send(mensaje)
                 except BrokenPipeError:
-                    # Manejar error de tubería rota aquí
-                    print(f"No se pudo enviar mensaje a {self.clientes[c]}. El cliente puede haberse desconectado.")
+                    # Manejo de errores
+                    print(f"No se pudo enviar mensaje a {self.clientes[c]}. Cliente desconectado.")
                     c.close()
                     del self.clientes[c]
-
+    # Método para transferencia de datos
     def manejar(self, cliente):
         try:
             apodo = self.clientes[cliente]
         except KeyError:
             print("Cliente desconocido.")
             return
-
         recibiendo_archivo = False
         datos_archivo = b''
         while True:
             try:
                 # Recepción del mensaje del cliente
                 mensaje = cliente.recv(1024)
-                # Verificar el inicio de la transferencia de archivos
+                # Verificar el inicio y final de la transferencia
                 if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
                     recibiendo_archivo = True
                     datos_archivo = b''
                     continue
-                # Verificar el final de la transferencia de archivos
                 elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
                     recibiendo_archivo = False
-                    # TODO: Manejar los datos del archivo recibido
                     continue
                 # Si se está recibiendo un archivo, agregar los datos
                 elif recibiendo_archivo:
@@ -74,7 +69,7 @@ class Servidor:
             print(f"Conectado con {str(direccion)}")
             
             # Solicitar y recibir el apodo del cliente
-            cliente.send('NICK'.encode('utf-8'))
+            cliente.send('Apodo'.encode('utf-8'))
             apodo = cliente.recv(1024).decode('utf-8')
             self.clientes[cliente] = apodo
             
@@ -89,9 +84,7 @@ class Servidor:
     # Método para iniciar el servidor
     def iniciar(self):
         print("*** ¡Servidor iniciado! ***")
-        # Comenzar a escuchar conexiones entrantes
         self.servidor.listen()
-        # Iniciar el método de recibir
         self.recibir()
 
 # Creación e inicio del servidor

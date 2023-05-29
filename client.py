@@ -5,14 +5,11 @@ import os
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
-# Definición de la clase Cliente
 class Cliente:
-    # Constructor de la clase Cliente
+    # Constructor del Cliente
     def __init__(self, host = '148.220.208.133', puerto = 5000):
         self.apodo = input("Ingresa tu apodo: ")
-        # Inicialización del socket
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Conexión al servidor
         self.cliente.connect((host, puerto))
 
     # Método para recibir datos del servidor
@@ -23,16 +20,14 @@ class Cliente:
             try:
                 # Recepción del mensaje del servidor
                 mensaje = self.cliente.recv(1024)
-                # Verificar el inicio de la transferencia de archivos
+                # Verificar el inicio y final de la transferencia
                 if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
                     recibiendo_archivo = True
                     datos_archivo = b''
                     continue
-                # Verificar el final de la transferencia de archivos
                 elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
                     recibiendo_archivo = False
-                    # TODO: Manejar los datos del archivo recibido
-                    # Por ahora, solo lo escribiremos en un archivo
+                    # Escribir los datos en un archivo
                     with open('archivo_recibido', 'wb') as f:
                         f.write(datos_archivo)
                     continue
@@ -44,7 +39,7 @@ class Cliente:
                     # Imprimir el mensaje
                     print(mensaje.decode('utf-8'))
             except:
-                # Si hay un error, cerrar la conexión y salir del bucle
+                # Si hay un error, cerrar la conexión
                 print("¡Ocurrió un error!")
                 self.cliente.close()
                 break
