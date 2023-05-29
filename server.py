@@ -22,7 +22,7 @@ class Servidor:
             except:
                 del self.clientes[cliente]
                 cliente.close()
-                self.difundir(f'{self.clientes[cliente]} dejó el chat!'.encode('utf-8'))
+                self.difundir(f"\n**{self.clientes[cliente]} dejo el chat".encode('utf-8'))
                 break
 
     def recibir(self):
@@ -34,15 +34,15 @@ class Servidor:
             apodo = cliente.recv(1024).decode('utf-8')
             self.clientes[cliente] = apodo
             
-            print(f'El apodo del cliente es {apodo}!')
-            self.difundir(f'{apodo} se unió al chat!'.encode('utf-8'), cliente)
-            cliente.send('Conectado al servidor!'.encode('utf-8'))
+            print(f"El apodo del cliente es {apodo}!")
+            self.difundir(f'\n+¡@{apodo} se unió al chat!'.encode('utf-8'), cliente)
+            cliente.send('*** ¡Conectado al servidor! ***'.encode('utf-8'))
 
             hilo = threading.Thread(target=self.manejar, args=(cliente,))
             hilo.start()
 
     def iniciar(self):
-        print("¡Servidor iniciado!")
+        print("*** ¡Servidor iniciado! ***")
         self.servidor.listen()
         self.recibir()
 
