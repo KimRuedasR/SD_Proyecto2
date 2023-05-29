@@ -14,21 +14,38 @@ class Cliente:
 
     # Método para recibir datos del servidor
     def recibir(self):
+        receiving_file = False
+        file_data = b''
         while True:
             try:
                 # Recepción del mensaje del servidor
-                mensaje = self.cliente.recv(1024).decode('utf-8')
-                # Si el mensaje es 'NICK', enviar el apodo al servidor
-                if mensaje == 'NICK':
-                    self.cliente.send(self.apodo.encode('utf-8'))
+                mensaje = self.cliente.recv(1024)
+                # Check for start of file transfer
+                if mensaje.decode('utf-8') == FILE_TRANSFER_START:
+                    receiving_file = True
+                    file_data = b''
+                    continue
+                # Check for end of file transfer
+                elif mensaje.decode('utf-8') == FILE_TRANSFER_END:
+                    receiving_file = False
+                    # TODO: Handle the received file data
+                    # For now, we'll just write it to a file
+                    with open('received_file', 'wb') as f:
+                        f.write(file_data)
+                    continue
+                # If currently receiving a file, append the data
+                elif receiving_file:
+                    file_data += mensaje
+                    continue
                 else:
                     # Imprimir el mensaje
-                    print(mensaje)
+                    print(mensaje.decode('utf-8'))
             except:
                 # Si hay un error, cerrar la conexión y salir del bucle
                 print("¡Ocurrió un error!")
                 self.cliente.close()
                 break
+
 
     # Método para enviar datos al servidor
     def escribir(self):
@@ -41,16 +58,17 @@ class Cliente:
 
             if opcion == "1":
                 while True:
-                    mensaje = input("Enviar mensaje: ")
+                    mensaje = input("--Enviar mensaje: ")
                     if mensaje.lower() == 'salir':
                         break
                     mensaje_completo = f'\n@{self.apodo}: {mensaje}'
-                    print(mensaje_completo)
                     self.cliente.send(mensaje_completo.encode('utf-8'))
 
             elif opcion == "2":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a enviar: ")
+                self.cliente.send(FILE_TRANSFER_START.encode('utf-8'))
                 self.enviar_archivo(nombre_archivo, self.cliente)
+                self.cliente.send(FILE_TRANSFER_END.encode('utf-8'))
 
             elif opcion == "3":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a recibir: ")

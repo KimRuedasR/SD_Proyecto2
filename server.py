@@ -15,15 +15,43 @@ class Servidor:
     # Método para enviar un mensaje a todos los clientes excepto a uno
     def difundir(self, mensaje, cliente):
         for c in self.clientes:
+            # Don't send the message to the client who originally sent it
             if c != cliente:
-                c.send(mensaje)
+                try:
+                    c.send(mensaje)
+                except BrokenPipeError:
+                    # Handle broken pipe error here
+                    print(f"Failed to send message to {self.clientes[c]}. Client may have disconnected.")
+                    c.close()
+                    del self.clientes[c]
 
-    # Método para manejar la comunicación con un cliente
     def manejar(self, cliente):
+        try:
+            apodo = self.clientes[cliente]
+        except KeyError:
+            print("Cliente desconocido.")
+            return
+
+        receiving_file = False
+        file_data = b''
         while True:
             try:
                 # Recepción del mensaje del cliente
                 mensaje = cliente.recv(1024)
+                # Check for start of file transfer
+                if mensaje.decode('utf-8') == FILE_TRANSFER_START:
+                    receiving_file = True
+                    file_data = b''
+                    continue
+                # Check for end of file transfer
+                elif mensaje.decode('utf-8') == FILE_TRANSFER_END:
+                    receiving_file = False
+                    # TODO: Handle the received file data
+                    continue
+                # If currently receiving a file, append the data
+                elif receiving_file:
+                    file_data += mensaje
+                    continue
                 # Envío del mensaje a todos los demás clientes
                 self.difundir(mensaje, cliente)
             except:
@@ -31,8 +59,10 @@ class Servidor:
                 del self.clientes[cliente]
                 # Cerrar la conexión con el cliente
                 cliente.close()
-                self.difundir(f"\n**{self.clientes[cliente]} dejo el chat".encode('utf-8'))
+                # Notificar a todos los clientes que este cliente ha dejado el chat
+                self.difundir(f"\n**{apodo} dejo el chat".encode('utf-8'), cliente=None)
                 break
+
 
     # Método para aceptar nuevas conexiones
     def recibir(self):
@@ -62,6 +92,31 @@ class Servidor:
         # Iniciar el método de recibir
         self.recibir()
 
+    # Método para manejar la comunicación con un cliente
+    def manejar(self, cliente):
+        try:
+            apodo = self.clientes[cliente]
+        except KeyError:
+            print("Cliente desconocido.")
+            return
+
+        while True:
+            try:
+                # Recepción del mensaje del cliente
+                mensaje = cliente.recv(1024)
+                # Envío del mensaje a todos los demás clientes
+                self.difundir(mensaje, cliente)
+            except:
+                # Si hay un error, eliminar el cliente de la lista de clientes
+                del self.clientes[cliente]
+                # Cerrar la conexión con el cliente
+                cliente.close()
+                # Notificar a todos los clientes que este cliente ha dejado el chat
+                self.difundir(f"\n**{apodo} dejo el chat".encode('utf-8'), cliente=None)
+                break
+
+
+    
 # Creación e inicio del servidor
 servidor = Servidor()
 servidor.iniciar()
