@@ -2,42 +2,43 @@ import socket
 import threading
 import os
 
-FILE_TRANSFER_START = 'FILE_TRANSFER_START'
-FILE_TRANSFER_END = 'FILE_TRANSFER_END'
+INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
+FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
+
 # Definición de la clase Cliente
 class Cliente:
-    # El constructor de la clase Cliente
-    def __init__(self, host = '148.220.208.133', port = 5000):
+    # Constructor de la clase Cliente
+    def __init__(self, host = '148.220.208.133', puerto = 5000):
         self.apodo = input("Ingresa tu apodo: ")
         # Inicialización del socket
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Conexión al servidor
-        self.cliente.connect((host, port))
+        self.cliente.connect((host, puerto))
 
     # Método para recibir datos del servidor
     def recibir(self):
-        receiving_file = False
-        file_data = b''
+        recibiendo_archivo = False
+        datos_archivo = b''
         while True:
             try:
                 # Recepción del mensaje del servidor
                 mensaje = self.cliente.recv(1024)
-                # Check for start of file transfer
-                if mensaje.decode('utf-8') == FILE_TRANSFER_START:
-                    receiving_file = True
-                    file_data = b''
+                # Verificar el inicio de la transferencia de archivos
+                if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
+                    recibiendo_archivo = True
+                    datos_archivo = b''
                     continue
-                # Check for end of file transfer
-                elif mensaje.decode('utf-8') == FILE_TRANSFER_END:
-                    receiving_file = False
-                    # TODO: Handle the received file data
-                    # For now, we'll just write it to a file
-                    with open('received_file', 'wb') as f:
-                        f.write(file_data)
+                # Verificar el final de la transferencia de archivos
+                elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
+                    recibiendo_archivo = False
+                    # TODO: Manejar los datos del archivo recibido
+                    # Por ahora, solo lo escribiremos en un archivo
+                    with open('archivo_recibido', 'wb') as f:
+                        f.write(datos_archivo)
                     continue
-                # If currently receiving a file, append the data
-                elif receiving_file:
-                    file_data += mensaje
+                # Si se está recibiendo un archivo, agregar los datos
+                elif recibiendo_archivo:
+                    datos_archivo += mensaje
                     continue
                 else:
                     # Imprimir el mensaje
@@ -68,9 +69,9 @@ class Cliente:
 
             elif opcion == "2":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a enviar: ")
-                self.cliente.send(FILE_TRANSFER_START.encode('utf-8'))
+                self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
                 self.enviar_archivo(nombre_archivo, self.cliente)
-                self.cliente.send(FILE_TRANSFER_END.encode('utf-8'))
+                self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
 
             elif opcion == "3":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a recibir: ")

@@ -1,29 +1,30 @@
 import socket
 import threading
 
-FILE_TRANSFER_START = 'FILE_TRANSFER_START'
-FILE_TRANSFER_END = 'FILE_TRANSFER_END'
+INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
+FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
+
 # Definición de la clase Servidor
 class Servidor:
-    # El constructor de la clase Servidor
-    def __init__(self, host = '148.220.208.133', port = 5000):
+    # Constructor de la clase Servidor
+    def __init__(self, host = '148.220.208.133', puerto = 5000):
         self.host = host
-        self.port = port
+        self.puerto = puerto
         # Inicialización del socket
         self.servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.servidor.bind((self.host, self.port))
+        self.servidor.bind((self.host, self.puerto))
         self.clientes = {}
 
     # Método para enviar un mensaje a todos los clientes excepto a uno
     def difundir(self, mensaje, cliente):
         for c in self.clientes:
-            # Don't send the message to the client who originally sent it
+            # No enviar el mensaje al cliente que originalmente lo envió
             if c != cliente:
                 try:
                     c.send(mensaje)
                 except BrokenPipeError:
-                    # Handle broken pipe error here
-                    print(f"Failed to send message to {self.clientes[c]}. Client may have disconnected.")
+                    # Manejar error de tubería rota aquí
+                    print(f"No se pudo enviar mensaje a {self.clientes[c]}. El cliente puede haberse desconectado.")
                     c.close()
                     del self.clientes[c]
 
@@ -34,27 +35,27 @@ class Servidor:
             print("Cliente desconocido.")
             return
 
-        receiving_file = False
-        file_data = b''
+        recibiendo_archivo = False
+        datos_archivo = b''
         while True:
             try:
                 # Recepción del mensaje del cliente
                 mensaje = cliente.recv(1024)
-                # Check for start of file transfer
-                if mensaje.decode('utf-8') == FILE_TRANSFER_START:
-                    receiving_file = True
-                    file_data = b''
+                # Verificar el inicio de la transferencia de archivos
+                if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
+                    recibiendo_archivo = True
+                    datos_archivo = b''
                     continue
-                # Check for end of file transfer
-                elif mensaje.decode('utf-8') == FILE_TRANSFER_END:
-                    receiving_file = False
-                    # TODO: Handle the received file data
+                # Verificar el final de la transferencia de archivos
+                elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
+                    recibiendo_archivo = False
+                    # TODO: Manejar los datos del archivo recibido
                     continue
-                # If currently receiving a file, append the data
-                elif receiving_file:
-                    file_data += mensaje
+                # Si se está recibiendo un archivo, agregar los datos
+                elif recibiendo_archivo:
+                    datos_archivo += mensaje
                     continue
-                # Envío del mensaje a todos los demás clientes
+                # Enviar el mensaje a todos los demás clientes
                 self.difundir(mensaje, cliente)
             except:
                 # Si hay un error, eliminar el cliente de la lista de clientes
@@ -62,9 +63,8 @@ class Servidor:
                 # Cerrar la conexión con el cliente
                 cliente.close()
                 # Notificar a todos los clientes que este cliente ha dejado el chat
-                self.difundir(f"\n**{apodo} dejo el chat".encode('utf-8'), cliente=None)
+                self.difundir(f"\n**{apodo} dejó el chat".encode('utf-8'), cliente=None)
                 break
-
 
     # Método para aceptar nuevas conexiones
     def recibir(self):
@@ -82,7 +82,7 @@ class Servidor:
             self.difundir(f'\n+¡@{apodo} se unió al chat!'.encode('utf-8'), cliente)
             cliente.send('*** ¡Conectado al servidor! ***'.encode('utf-8'))
 
-            # Iniciar un nuevo thread para manejar la comunicación con el cliente
+            #Iniciar un nuevo hilo para manejar la comunicación con el cliente
             hilo = threading.Thread(target=self.manejar, args=(cliente,))
             hilo.start()
 
@@ -94,31 +94,6 @@ class Servidor:
         # Iniciar el método de recibir
         self.recibir()
 
-    # Método para manejar la comunicación con un cliente
-    def manejar(self, cliente):
-        try:
-            apodo = self.clientes[cliente]
-        except KeyError:
-            print("Cliente desconocido.")
-            return
-
-        while True:
-            try:
-                # Recepción del mensaje del cliente
-                mensaje = cliente.recv(1024)
-                # Envío del mensaje a todos los demás clientes
-                self.difundir(mensaje, cliente)
-            except:
-                # Si hay un error, eliminar el cliente de la lista de clientes
-                del self.clientes[cliente]
-                # Cerrar la conexión con el cliente
-                cliente.close()
-                # Notificar a todos los clientes que este cliente ha dejado el chat
-                self.difundir(f"\n**{apodo} dejo el chat".encode('utf-8'), cliente=None)
-                break
-
-
-    
 # Creación e inicio del servidor
 servidor = Servidor()
 servidor.iniciar()
