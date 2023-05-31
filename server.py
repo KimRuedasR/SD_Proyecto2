@@ -6,7 +6,7 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Servidor:
     # Constructor del servidor
-    def __init__(self, host = 'localhost', puerto = 6000):
+    def __init__(self, host = 'localhost', puerto = 3001):
         self.host = host
         self.puerto = puerto
         # Inicialización del socket
@@ -39,7 +39,7 @@ class Servidor:
         while True:
             try:
                 # Recepción del mensaje del cliente
-                mensaje = cliente.recv(1024)
+                mensaje = cliente.recv(4096)
                 # Verificar el inicio y final de la transferencia
                 if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
                     recibiendo_archivo = True
@@ -71,7 +71,7 @@ class Servidor:
             print(f"Conectado con {str(direccion)}")
             
             # Solicitar y recibir el apodo del cliente
-            apodo = cliente.recv(1024).decode('utf-8')
+            apodo = cliente.recv(4096).decode('utf-8')
             self.clientes[cliente] = apodo
             
             print(f"El apodo del cliente es {apodo}")

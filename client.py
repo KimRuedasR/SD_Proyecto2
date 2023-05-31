@@ -7,7 +7,7 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host = 'localhost', puerto = 6000):
+    def __init__(self, host = 'localhost', puerto = 3001):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
@@ -18,34 +18,28 @@ class Cliente:
         recibiendo_archivo = False
         datos_archivo = b''
         while True:
-            try:
-                # Recepción del mensaje del servidor
-                mensaje = self.cliente.recv(1024)
-                # Verificar el inicio y final de la transferencia
-                if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
-                    recibiendo_archivo = True
-                    datos_archivo = b''
-                    continue
-                elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
-                    recibiendo_archivo = False
-                    # Escribir los datos en un archivo
-                    with open('archivo_recibido', 'wb') as f:
-                        f.write(datos_archivo)
-                    continue
-                # Si se está recibiendo un archivo, agregar los datos
-                elif recibiendo_archivo:
-                    datos_archivo += mensaje
-                    continue
-                elif mensaje == 'Apodo':
-                    print('chingadamadre')
-                else:
-                    # Imprimir el mensaje
-                    print(mensaje.decode('utf-8'))
-            except:
-                # Si hay un error, cerrar la conexión
-                print("¡Ocurrió un error!")
-                self.cliente.close()
-                break
+            # Recepción del mensaje del servidor
+            mensaje = self.cliente.recv(4096)
+            # Verificar el inicio y final de la transferencia
+            if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
+                recibiendo_archivo = True
+                datos_archivo = b''
+                continue
+            elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
+                recibiendo_archivo = False
+                # Escribir los datos en un archivo
+                with open('archivo_recibido', 'wb') as f:
+                    f.write(datos_archivo)
+                continue
+            # Si se está recibiendo un archivo, agregar los datos
+            elif recibiendo_archivo:
+                datos_archivo += mensaje
+                continue
+            elif mensaje == 'Apodo':
+                print('chingadamadre')
+            else:
+                # Imprimir el mensaje
+                print(mensaje.decode('utf-8'))
 
 
     # Método para enviar datos al servidor
