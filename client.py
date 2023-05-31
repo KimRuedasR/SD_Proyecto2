@@ -7,7 +7,7 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host = 'localhost', puerto = 3001):
+    def __init__(self, host='localhost', puerto=4000):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
@@ -62,11 +62,16 @@ class Cliente:
                 self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
                 self.enviar_archivo(nombre_archivo, self.cliente)
                 self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
+                if nombre_archivo.lower() == 'salir':
+                    break
             elif opcion == "3":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a recibir: ")
                 self.recibir_archivo(nombre_archivo, self.cliente)
+                if nombre_archivo.lower() == 'salir':
+                    break
             else:
                 print("\nOpción incorrecta. Intenta de nuevo.")
+
 
     # Método para enviar un archivo al servidor
     def enviar_archivo(self, nombre_archivo, socket):
