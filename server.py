@@ -6,7 +6,7 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Servidor:
     # Constructor del servidor
-    def __init__(self, host = '148.220.208.133', puerto = 5000):
+    def __init__(self, host = 'localhost', puerto = 6000):
         self.host = host
         self.puerto = puerto
         # Inicialización del socket
@@ -18,6 +18,7 @@ class Servidor:
     def difundir(self, mensaje, cliente):
         for c in self.clientes:
             # No enviar el mensaje al cliente emisor
+             if c != cliente:
                 try:
                     c.send(mensaje)
                 except BrokenPipeError:
@@ -25,6 +26,7 @@ class Servidor:
                     print(f"No se pudo enviar mensaje a {self.clientes[c]}. Cliente desconectado.")
                     c.close()
                     del self.clientes[c]
+                    
     # Método para transferencia de datos
     def manejar(self, cliente):
         try:
@@ -69,11 +71,10 @@ class Servidor:
             print(f"Conectado con {str(direccion)}")
             
             # Solicitar y recibir el apodo del cliente
-            cliente.send('Apodo'.encode('utf-8'))
             apodo = cliente.recv(1024).decode('utf-8')
             self.clientes[cliente] = apodo
             
-            print(f"El apodo del cliente es {apodo}!")
+            print(f"El apodo del cliente es {apodo}")
             self.difundir(f'\n+¡@{apodo} se unió al chat!'.encode('utf-8'), cliente)
             cliente.send('*** ¡Conectado al servidor! ***'.encode('utf-8'))
 

@@ -7,10 +7,11 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host = '148.220.208.133', puerto = 5000):
+    def __init__(self, host = 'localhost', puerto = 6000):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
+        self.cliente.send(self.apodo.encode('utf-8'))
 
     # Método para recibir datos del servidor
     def recibir(self):
@@ -35,6 +36,8 @@ class Cliente:
                 elif recibiendo_archivo:
                     datos_archivo += mensaje
                     continue
+                elif mensaje == 'Apodo':
+                    print('chingadamadre')
                 else:
                     # Imprimir el mensaje
                     print(mensaje.decode('utf-8'))
@@ -53,7 +56,6 @@ class Cliente:
             print("2. Enviar archivo")
             print("3. Recibir archivo")
             opcion = input()
-
             if opcion == "1":
                 while True:
                     mensaje = input("--Enviar mensaje: ")
@@ -61,17 +63,14 @@ class Cliente:
                         break
                     mensaje_completo = f'\n@{self.apodo}: {mensaje}'
                     self.cliente.send(mensaje_completo.encode('utf-8'))
-
             elif opcion == "2":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a enviar: ")
                 self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
                 self.enviar_archivo(nombre_archivo, self.cliente)
                 self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
-
             elif opcion == "3":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a recibir: ")
                 self.recibir_archivo(nombre_archivo, self.cliente)
-
             else:
                 print("\nOpción incorrecta. Intenta de nuevo.")
 
