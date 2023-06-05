@@ -7,7 +7,7 @@ FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host='localhost', puerto=4000):
+    def __init__(self, host='148.220.212.109', puerto=5000):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
