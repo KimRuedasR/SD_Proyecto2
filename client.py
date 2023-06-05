@@ -5,43 +5,45 @@ FIN = b'<FIN>'
 
 class Cliente:
     def __init__(self, host="localhost", puerto=4000):
-        self.apodo = input("Escoge un nickname: ")
+        self.nickname = input("Elige un nickname: ")
 
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
 
         thread_recibir = threading.Thread(target=self.recibir)
-        thread_escribir = threading.Thread(target=self.escribir)
+        thread_enviar = threading.Thread(target=self.enviar)
 
         thread_recibir.start()
-        thread_escribir.start()
+        thread_enviar.start()
 
     def recibir(self):
         while True:
             try:
-                mensaje = self.cliente.recv(1024).decode('utf-8')
-                if mensaje == 'Escribe tu nickname y presiona Enter':
-                    self.cliente.send(self.apodo.encode('utf-8'))
+                mensaje = self.cliente.recv(1024).decode('utf8')
+                if mensaje == 'Ingresa tu nickname y presiona enter':
+                    self.cliente.send(self.nickname.encode('utf8'))
                 else:
                     print(mensaje)
             except:
-                print("Error!")
+                print("Ha ocurrido un error!")
                 self.cliente.close()
                 break
 
-    def escribir(self):
+    def enviar(self):
         while True:
-            mensaje = f'{self.apodo}: {input("")}'
+            mensaje = f'{self.nickname}: {input("")}'
             if mensaje.lower() == "salir":
-                self.cliente.send('Se ha desconectado del servidor.'.encode('utf-8'))
+                self.cliente.send('Se ha desconectado del servidor.'.encode('utf8'))
                 break
             elif mensaje.startswith("FILE:"):
                 self.enviar_archivo(mensaje[5:], self.cliente)
             else:
-                self.cliente.send(mensaje.encode('utf-8'))
+                self.cliente.send(mensaje.encode('utf8'))
 
     def enviar_archivo(self, nombre_archivo, socket):
-        socket.sendall(f"FILE:{nombre_archivo}".encode('utf-8'))  # envía el nombre del archivo primero
+        # Añadido para manejar el envío de archivos
+        # Envía el nombre del archivo primero
+        socket.sendall(f"FILE:{nombre_archivo}".encode('utf8')) 
         with open(nombre_archivo, 'rb') as f:
             while True:
                 bytes_leidos = f.read(1024)
