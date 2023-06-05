@@ -1,96 +1,89 @@
 import socket
 import threading
 
-INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
-FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
+FIN = b'<FIN>'
 
 class Servidor:
-    # Constructor del servidor
-    def __init__(self, host='148.220.212.109', puerto=5000):
-        self.host = host
-        self.puerto = puerto
-        # Inicialización del socket
-        self.servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.servidor.bind((self.host, self.puerto))
+    def __init__(self, host="localhost", puerto=4000):
         self.clientes = {}
+        self.topics = {"general": []}
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((host, puerto))
+        self.server.listen()
+        self.server.setblocking(False)
+        
+        aceptar = threading.Thread(target=self.aceptar_clientes)
+        procesar = threading.Thread(target=self.procesar_mensajes)
 
-    # Método para enviar un mensaje a todos los clientes
-    def difundir(self, mensaje, cliente):
-        for c in self.clientes:
-            # No enviar el mensaje al cliente emisor
-            if c != cliente:
-                try:
-                    c.send(mensaje)
-                except BrokenPipeError:
-                    # Manejo de errores
-                    print(f"No se pudo enviar mensaje a {self.clientes[c]}. Cliente desconectado.")
-                    c.close()
-                    del self.clientes[c]
+        aceptar.start()
+        procesar.start()
 
-    # Método para transferencia de datos
+    def broadcast(self, mensaje, prefix=""):  # prefix es para nombre identificacion.
+        for client in self.clientes:
+            client.send(bytes(prefix, "utf8")+mensaje)
+
+    def aceptar_clientes(self):
+        print("El servidor está aceptando conexiones...")
+        while True:
+            client, addr = self.server.accept()
+            print(f"\nConexión establecida con {addr}.")
+
+            client.send(bytes("Escribe tu nickname y presiona Enter", "utf8"))
+            apodo = client.recv(1024).decode("utf8")
+            self.clientes[client] = apodo
+
+            print(f"\nNickname del cliente es {apodo}!")
+            broadcast(bytes(f"\n{apodo} se ha unido al chat!", "utf8"))
+            client.send(bytes("Te has unido al chat!", "utf8"))
+
+            atender_cliente = threading.Thread(target=self.manejar, args=(client,))
+            atender_cliente.start()
+
+    def procesar_mensajes(self):
+        print("El servidor está procesando mensajes...")
+        while True:
+            if len(self.clientes) > 0:
+                for client in self.clientes:
+                    mensaje = client.recv(1024).decode("utf8")
+                    self.broadcast(mensaje)
+
     def manejar(self, cliente):
         try:
             apodo = self.clientes[cliente]
         except KeyError:
             print("Cliente desconocido.")
             return
+
         recibiendo_archivo = False
-        datos_archivo = b''
+        nombre_archivo = None
+        archivo = None
         while True:
             try:
-                # Recepción del mensaje del cliente
-                mensaje = cliente.recv(24)
-                # Verificar el inicio y final de la transferencia
-                if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
-                    recibiendo_archivo = True
-                    datos_archivo = b''
-                    continue
-                elif mensaje.decode('utf-8') == FIN_TRANSFERENCIA:
-                    recibiendo_archivo = False
-                    # Escribir los datos en un archivo
-                    with open('archivo_recibido', 'wb') as f:
-                        f.write(datos_archivo)
-                    continue
-                # Si se está recibiendo un archivo, agregar los datos
-                elif recibiendo_archivo:
-                    datos_archivo += mensaje
-                    continue
-                # Enviar el mensaje a todos los demás clientes
-                self.difundir(mensaje, cliente)
+                mensaje = cliente.recv(1024)
+                if recibiendo_archivo:
+                    if mensaje[-5:] == FIN:
+                        archivo.write(mensaje[:-5])  # escribe la última parte del archivo
+                        archivo.close()
+                        archivo = None
+                        recibiendo_archivo = False
+                        nombre_archivo = None
+                    else:
+                        archivo.write(mensaje)
+                else:
+                    if mensaje.decode('utf-8').startswith("FILE:"):
+                        nombre_archivo = mensaje.decode('utf-8')[5:]  # obtiene el nombre del archivo
+                        archivo = open(nombre_archivo, 'wb')
+                        recibiendo_archivo = True
+                    else:
+                        self.broadcast(mensaje, apodo+": ")
+
             except:
-                # Si hay un error, eliminar el cliente de la lista de clientes
+                if archivo:  # asegúrese de cerrar el archivo si se abrió
+                    archivo.close()
                 del self.clientes[cliente]
-                # Cerrar la conexión con el cliente
                 cliente.close()
-                # Notificar a todos los clientes que este cliente ha dejado el chat
-                self.difundir(f"\n**{apodo} dejó el chat".encode('utf-8'), cliente=None)
+                self.broadcast(f"\n**{apodo} dejó el chat".encode('utf-8'))
                 break
 
-    # Método para aceptar nuevas conexiones
-    def recibir(self):
-        while True:
-            # Aceptar una nueva conexión
-            cliente, direccion = self.servidor.accept()
-            print(f"Conectado con {str(direccion)}")
-
-            # Solicitar y recibir el apodo del cliente
-            apodo = cliente.recv(4096).decode('utf-8')
-            self.clientes[cliente] = apodo
-
-            print(f"El apodo del cliente es {apodo}")
-            self.difundir(f'\n+¡@{apodo} se unió al chat!'.encode('utf-8'), cliente)
-            cliente.send('*** ¡Conectado al servidor! ***'.encode('utf-8'))
-
-            # Iniciar un nuevo hilo para manejar la comunicación con el cliente
-            hilo = threading.Thread(target=self.manejar, args=(cliente,))
-            hilo.start()
-
-    # Método para iniciar el servidor
-    def iniciar(self):
-        print("*** ¡Servidor iniciado! ***")
-        self.servidor.listen()
-        self.recibir()
-
-# Creación e inicio del servidor
-servidor = Servidor()
-servidor.iniciar()
+if __name__ == "__main__":
+    Servidor()
