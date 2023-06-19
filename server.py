@@ -3,11 +3,11 @@ import threading
 
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
-buff=1024
+buff=4096
 
 class Servidor:
     # Constructor del servidor
-    def __init__(self, host = 'localhost', puerto = 6000):
+    def __init__(self, host = '148.220.209.110', puerto = 5000):
         self.host = host
         self.puerto = puerto
         # Inicialización del socket

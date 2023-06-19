@@ -3,7 +3,7 @@ import threading
 
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
-buff=1024
+buff=4096
 
 class Cliente:
     # Constructor del Cliente
@@ -28,8 +28,10 @@ class Cliente:
     def enviar_archivo(self, nombre_archivo):
         # Enviar el indicador de inicio de transferencia al servidor
         self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
-        # Enviar el nombre del archivo
+        # Enviar el nombre del archivo (con extensión)
         self.cliente.send(nombre_archivo.encode('utf-8'))
+        # Enviar un separador
+        self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
         # Leer el archivo y enviar los datos al servidor
         with open(nombre_archivo, 'rb') as f:
             while True:
@@ -42,10 +44,19 @@ class Cliente:
 
     # Método para recibir un archivo del servidor
     def recibir_archivo(self, mensaje):
-        # Recibir el nombre del archivo
-        nombre_archivo = self.cliente.recv(buff).decode('utf-8')
+        # Recibir el nombre del archivo (con extensión)
+        nombre_archivo = b""
+        while True:
+            data = self.cliente.recv(buff)
+            nombre_archivo += data
+            if FIN_TRANSFERENCIA.encode('utf-8') in nombre_archivo:
+                nombre_archivo, data = nombre_archivo.split(FIN_TRANSFERENCIA.encode('utf-8'), 1)
+                nombre_archivo = nombre_archivo.decode('utf-8')
+                break
         # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
-        with open('nombre_archivo', 'wb') as f:
+        with open(nombre_archivo, 'wb') as f:
+            if data:
+                f.write(data)
             while True:
                 data = self.cliente.recv(buff)
                 # Comprobar si los datos recibidos son el indicador de fin de transferencia
@@ -57,6 +68,7 @@ class Cliente:
                 f.write(data)
         # Imprimir un mensaje indicando que el archivo ha sido recibido
         print("\n** Archivo recibido con éxito. **")
+
 
     # Método para enviar datos al servidor
     def escribir(self):
