@@ -7,7 +7,7 @@ buff=1024
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host='localhost', puerto=6000):
+    def __init__(self, host='148.220.209.110', puerto=5000):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
@@ -28,6 +28,8 @@ class Cliente:
     def enviar_archivo(self, nombre_archivo):
         # Enviar el indicador de inicio de transferencia al servidor
         self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
+        # Enviar el nombre del archivo
+        self.cliente.send(nombre_archivo.encode('utf-8'))
         # Leer el archivo y enviar los datos al servidor
         with open(nombre_archivo, 'rb') as f:
             while True:
@@ -40,8 +42,10 @@ class Cliente:
 
     # Método para recibir un archivo del servidor
     def recibir_archivo(self, mensaje):
+        # Recibir el nombre del archivo
+        nombre_archivo = self.cliente.recv(buff).decode('utf-8')
         # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
-        with open('archivo_recibido', 'wb') as f:
+        with open('nombre_archivo', 'wb') as f:
             while True:
                 data = self.cliente.recv(buff)
                 # Comprobar si los datos recibidos son el indicador de fin de transferencia
