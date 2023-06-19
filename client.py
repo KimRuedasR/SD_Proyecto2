@@ -3,35 +3,54 @@ import threading
 
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
+buff=1024
 
 class Cliente:
     # Constructor del Cliente
-    def __init__(self, host='localhost', puerto=5000):
+    def __init__(self, host='localhost', puerto=6000):
         self.apodo = input("Ingresa tu apodo: ")
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cliente.connect((host, puerto))
         self.cliente.send(self.apodo.encode('utf-8'))
 
+    # Método para recibir un archivo del servidor
+    def recibir_archivo(self, mensaje):
+        # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
+        with open('archivo_recibido', 'wb') as f:
+            while True:
+                data = self.cliente.recv(buff)
+                # Comprobar si los datos recibidos son el indicador de fin de transferencia
+                if data.endswith(FIN_TRANSFERENCIA.encode('utf-8')):
+                    # Escribir los datos restantes y terminar el bucle
+                    f.write(data[:-len(FIN_TRANSFERENCIA)])
+                    break
+                # Escribir los datos en el archivo
+                f.write(data)
+
     # Método para recibir datos del servidor
     def recibir(self):
         while True:
-            mensaje = self.cliente.recv(1024)
+            mensaje = self.cliente.recv(buff)
             # Comprobar si el mensaje es el indicador de inicio de transferencia de archivo
             if mensaje.decode('utf-8') == INICIO_TRANSFERENCIA:
-                # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
-                with open('archivo_recibido', 'wb') as f:
-                    while True:
-                        data = self.cliente.recv(1024)
-                        # Comprobar si los datos recibidos son el indicador de fin de transferencia
-                        if data.endswith(FIN_TRANSFERENCIA.encode('utf-8')):
-                            # Escribir los datos restantes y terminar el bucle
-                            f.write(data[:-len(FIN_TRANSFERENCIA)])
-                            break
-                        # Escribir los datos en el archivo
-                        f.write(data)
+                self.recibir_archivo(mensaje)
             else:
                 # Si el mensaje no es un indicador de transferencia, imprimir el mensaje
                 print(mensaje.decode('utf-8'))
+
+    # Método para enviar un archivo al servidor
+    def enviar_archivo(self, nombre_archivo):
+        # Enviar el indicador de inicio de transferencia al servidor
+        self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
+        # Leer el archivo y enviar los datos al servidor
+        with open(nombre_archivo, 'rb') as f:
+            while True:
+                data = f.read(buff)
+                if not data:
+                    break
+                self.cliente.send(data)
+        # Enviar el indicador de fin de transferencia al servidor
+        self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
 
     # Método para enviar datos al servidor
     def escribir(self):
@@ -49,17 +68,7 @@ class Cliente:
                     self.cliente.send(mensaje_completo.encode('utf-8'))
             elif opcion == "2":
                 nombre_archivo = input("\n--Ingresa el nombre del archivo a enviar: ")
-                # Enviar el indicador de inicio de transferencia al servidor
-                self.cliente.send(INICIO_TRANSFERENCIA.encode('utf-8'))
-                # Leer el archivo y enviar los datos al servidor
-                with open(nombre_archivo, 'rb') as f:
-                    while True:
-                        data = f.read(1024)
-                        if not data:
-                            break
-                        self.cliente.send(data)
-                # Enviar el indicador de fin de transferencia al servidor
-                self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
+                self.enviar_archivo(nombre_archivo)
             else:
                 print("\nOpción incorrecta. Intenta de nuevo.")
 

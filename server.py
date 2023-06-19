@@ -3,10 +3,11 @@ import threading
 
 INICIO_TRANSFERENCIA = 'INICIO_TRANSFERENCIA'
 FIN_TRANSFERENCIA = 'FIN_TRANSFERENCIA'
+buff=1024
 
 class Servidor:
     # Constructor del servidor
-    def __init__(self, host = 'localhost', puerto = 5000):
+    def __init__(self, host = 'localhost', puerto = 6000):
         self.host = host
         self.puerto = puerto
         # Inicialización del socket
@@ -24,7 +25,7 @@ class Servidor:
     def manejar(self, cliente):
         while True:
             try:
-                mensaje = cliente.recv(1024)
+                mensaje = cliente.recv(buff)
                 self.difundir(mensaje, cliente)
             except:
                 apodo = self.clientes[cliente]  # Guardar el apodo antes de eliminar al cliente
@@ -38,7 +39,7 @@ class Servidor:
         while True:
             cliente, direccion = self.servidor.accept()
             print(f"Conectado con {str(direccion)}")
-            apodo = cliente.recv(1024).decode('utf-8')
+            apodo = cliente.recv(buff).decode('utf-8')
             self.clientes[cliente] = apodo
             print(f"El apodo del cliente es {apodo}")  # Imprimir el apodo del cliente
             self.difundir(f'\n+¡@{apodo} se unió al chat!'.encode('utf-8'), cliente)
