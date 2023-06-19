@@ -13,20 +13,6 @@ class Cliente:
         self.cliente.connect((host, puerto))
         self.cliente.send(self.apodo.encode('utf-8'))
 
-    # Método para recibir un archivo del servidor
-    def recibir_archivo(self, mensaje):
-        # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
-        with open('archivo_recibido', 'wb') as f:
-            while True:
-                data = self.cliente.recv(buff)
-                # Comprobar si los datos recibidos son el indicador de fin de transferencia
-                if data.endswith(FIN_TRANSFERENCIA.encode('utf-8')):
-                    # Escribir los datos restantes y terminar el bucle
-                    f.write(data[:-len(FIN_TRANSFERENCIA)])
-                    break
-                # Escribir los datos en el archivo
-                f.write(data)
-
     # Método para recibir datos del servidor
     def recibir(self):
         while True:
@@ -51,6 +37,22 @@ class Cliente:
                 self.cliente.send(data)
         # Enviar el indicador de fin de transferencia al servidor
         self.cliente.send(FIN_TRANSFERENCIA.encode('utf-8'))
+
+    # Método para recibir un archivo del servidor
+    def recibir_archivo(self, mensaje):
+        # Crear y abrir un nuevo archivo y escribir los datos recibidos en él
+        with open('archivo_recibido', 'wb') as f:
+            while True:
+                data = self.cliente.recv(buff)
+                # Comprobar si los datos recibidos son el indicador de fin de transferencia
+                if data.endswith(FIN_TRANSFERENCIA.encode('utf-8')):
+                    # Escribir los datos restantes y terminar el bucle
+                    f.write(data[:-len(FIN_TRANSFERENCIA)])
+                    break
+                # Escribir los datos en el archivo
+                f.write(data)
+        # Imprimir un mensaje indicando que el archivo ha sido recibido
+        print("\n** Archivo recibido con éxito. **")
 
     # Método para enviar datos al servidor
     def escribir(self):
